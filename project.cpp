@@ -2,6 +2,9 @@
 #include <fstream>
 #include <string>
 #include <sstream>
+#include <vector>
+#include <algorithm>
+#include <random>
 
 using namespace std;
 
@@ -163,6 +166,63 @@ void SJF(Process processes[]) {
 	printResults(processes, waitingTime, turnArroundTime, completionTime);
 }
 
+int getRandomFromVec(vector<int> &vec) {
+	auto rand = default_random_engine {};
+	shuffle(begin(vec), end(vec), rand);
+	return vec[vec.size() - 1];
+}
+
+void pageTables(Process processes[], int framesNo) {
+	int availableMSize = msize, pageNo = 0;;
+	vector<int> frames(framesNo, -1);
+
+	// Create an incremental vector from 0 to framesNo
+	vector<int> framesNumbers(framesNo);
+	generate(framesNumbers.begin(), framesNumbers.end(), [] {
+    	static int i = 0;
+    	return i++;
+	});
+	
+	for (int i = 0; i < ProcessesNumber; i++) {
+		if(processes[i].size > availableMSize) {
+			cout << "[*] There is no enough space in memory for process " << i << "\n\n";
+		} else {
+			cout << "[*] Page table for process " << i << "\n";
+			int pages = processes[i].size / psize;
+			
+			cout << "Page number\tFrame number\n";
+			for (int j = 0; j < pages; j++) {
+				int frame = getRandomFromVec(framesNumbers);
+				cout << pageNo << "\t\t" << frame << "\n";
+				frames[frame] = pageNo++;
+				framesNumbers.pop_back();
+			}
+			cout << "\n";
+			availableMSize -= processes[i].size;
+		}
+	}
+
+	// Map of the physical memory
+	cout << "[*] Physical Memory\n";
+	for (int i = 0; i < frames.size(); i++) {
+		cout << "Frame " << i;
+		if (frames[i] == -1) {
+			cout << " is empty\n";
+		} else {
+			cout << " have page " << frames[i] << "\n";
+		}
+	}
+	
+	// Request logical address
+	int logicalAddress, physicalAddress, locatedIn;
+	cout << "Enter logical address: ";
+	cin >> logicalAddress;
+	physicalAddress = logicalAddress + psize;
+	locatedIn = floor((float)physicalAddress / (float)psize);
+	cout << "The physical address is: " << physicalAddress << "\n";
+	cout << "The logical address " << logicalAddress << " is in frame " << locatedIn << " in page " << frames[locatedIn] << "\n";
+}
+
 int main() {
 	// Declaring variables
 	ifstream processesFile;
@@ -202,6 +262,21 @@ int main() {
 	cout << "\n[-] ----------------------------------------SJF---------------------------------------- [-]\n\n";
 	copy(begin(processes), end(processes), begin(copyOfProcesses));
 	SJF(copyOfProcesses);
+
+	cout << "\n\n[*] ***********************************Paging Part**************************************** [*]\n\n";
+
+	// Paging part
+	int framesNo;
+    framesNo = msize / psize;
+
+    cout << "Number of frames: " << framesNo << "\n";
+    for (int i = 0; i < ProcessesNumber; i++) {
+        cout << "Number of pages of process " << i << ": " << processes[i].size / psize << "\n";
+    }
+
+	cout << "\n[-] ----------------------------------Page Tables---------------------------------------- [-]\n\n";
+	copy(begin(processes), end(processes), begin(copyOfProcesses));
+	pageTables(copyOfProcesses, framesNo);
 
 	return 0;
 }
