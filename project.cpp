@@ -166,6 +166,61 @@ void SJF(Process processes[]) {
 	printResults(processes, waitingTime, turnArroundTime, completionTime);
 }
 
+void RR(Process processes[]) {
+	int waitingTime[ProcessesNumber] = {-1}, turnArroundTime[ProcessesNumber] = {-1}, completionTime[ProcessesNumber], remainingTime[ProcessesNumber];
+	int temps = 0, remain = ProcessesNumber;
+
+	// completionTime[0] = processes[0].arrivalTime + processes[0].CPUBurst;
+	// turnArroundTime[0] = completionTime[0] - processes[0].arrivalTime;
+	// waitingTime[0] = turnArroundTime[0] - processes[0].CPUBurst;
+	arrangeArrivals(processes);
+
+	for (int i = 0; i < ProcessesNumber; i++) {
+		remainingTime[i] = processes[i].CPUBurst;
+	}
+
+	cout << "[*] Gantt Chart\n\n";
+
+	for (int i = 0, time = 0; remain != 0;) {
+		int timeBefore = time;
+		if(remainingTime[i] <= Q && remainingTime[i] > 0) {
+			time += remainingTime[i];
+			if(time != 0) time += CS;
+			remainingTime[i] = 0;
+			temps = 1;
+		} else if (remainingTime[i] > 0) {
+			remainingTime[i] -= Q;
+			time += Q;
+			if(time != 0) time += CS;
+		}
+		if(remainingTime[i] == 0 && temps == 1) {
+			remain--;
+			// time = completionTime[i-1] + processes[i].CPUBurst + CS;
+			// completionTime[i] = completionTime[i-1] + processes[i].CPUBurst + CS;
+			turnArroundTime[i] = time - processes[i].arrivalTime;
+			waitingTime[i] = turnArroundTime[i] - processes[i].CPUBurst;
+			temps = 0;
+		}
+		cout << timeBefore << " -> p" << i << " -> " << time - CS;
+		if(remain != 0) cout << "  |CS|  ";
+		if(time == 0) time += CS;
+		if(i == ProcessesNumber-1)
+			i=0;
+		else if(processes[i+1].arrivalTime <= time)
+			i++;
+		else
+			i=0;
+	}
+
+	for (int i = 0; i < ProcessesNumber; i++) {
+		completionTime[i] = turnArroundTime[i] + processes[i].arrivalTime;
+	}
+
+	cout << "\n\n";
+	printResults(processes, waitingTime, turnArroundTime, completionTime);
+	
+}
+
 int getRandomFromVec(vector<int> &vec) {
 	auto rand = default_random_engine {};
 	shuffle(begin(vec), end(vec), rand);
@@ -262,6 +317,10 @@ int main() {
 	cout << "\n[-] ----------------------------------------SJF---------------------------------------- [-]\n\n";
 	copy(begin(processes), end(processes), begin(copyOfProcesses));
 	SJF(copyOfProcesses);
+	
+	cout << "\n[-] -----------------------------------------RR---------------------------------------- [-]\n\n";
+	copy(begin(processes), end(processes), begin(copyOfProcesses));
+	RR(copyOfProcesses);
 
 	cout << "\n\n[*] ***********************************Paging Part**************************************** [*]\n\n";
 
