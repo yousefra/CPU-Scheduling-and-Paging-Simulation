@@ -202,7 +202,7 @@ void RR(Process processes[]) {
 			temps = 0;
 		}
 		cout << timeBefore << " -> p" << i << " -> " << time - CS;
-		if(remain != 0) cout << "  |CS|  ";
+		if(remain != 0) cout << "  |XX|  ";
 		if(time == 0) time += CS;
 		if(i == ProcessesNumber-1)
 			i=0;
@@ -275,7 +275,17 @@ void pageTables(Process processes[], int framesNo) {
 	physicalAddress = logicalAddress + psize;
 	locatedIn = floor((float)physicalAddress / (float)psize);
 	cout << "The physical address is: " << physicalAddress << "\n";
-	cout << "The logical address " << logicalAddress << " is in frame " << locatedIn << " in page " << frames[locatedIn] << "\n";
+	cout << "The logical address " << logicalAddress;
+	if (locatedIn > frames.size() - 1) {
+		cout << " does not exist in any frame.\n";
+	} else {
+		cout << " is in frame " << locatedIn;
+		if (frames[locatedIn] == -1) {
+			cout << " which is empty\n";
+		} else {
+			cout << " in page " << frames[locatedIn] << "\n";
+		}
+	}
 }
 
 int main() {
@@ -328,6 +338,7 @@ int main() {
 	int framesNo;
     framesNo = msize / psize;
 
+	// Separating the processes into pages in HDD
     cout << "Number of frames: " << framesNo << "\n";
     for (int i = 0; i < ProcessesNumber; i++) {
         cout << "Number of pages of process " << i << ": " << processes[i].size / psize << "\n";
